@@ -1,0 +1,10 @@
+[email]
+emailAddress:EMAIL ADDRESS FOR LOG, EG: gis@gcc.tas.gov.au
+mailServer:INTERNAL MAIL SERVER ADDRESS, EG: smtp-endpoint.glenorchy.tas.gov.au
+[log]
+logFile = C:\temp\LIST_FTP_Download.log
+localPath = C:\temp\LIST_ftp
+[ftpdetails]
+SITE:listdata.thelist.tas.gov.au
+UN:EXAMPLE
+PW:EXAMPLE
