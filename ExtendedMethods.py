@@ -6,11 +6,12 @@
 #         It does this poorly and should probably not be copied!
 ####=================####
 
-import ftplib
-import ConfigParser
+
 
 #Check for trigger files and if found, set up trigger.
 def processTriggers(downloadedFiles):
+    import ftplib
+    import ConfigParser
 	#load config
     config = ConfigParser.ConfigParser()
     config.read("C:\GIS\Corporate\GISAdministration\Security\LIST_ftp_script_details.txt")
