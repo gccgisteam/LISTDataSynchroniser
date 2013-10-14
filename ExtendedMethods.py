@@ -6,24 +6,37 @@
 #         It does this poorly and should probably not be copied!
 ####=================####
 
-from ftplib import ftp
-import ConfigParser
 
+from ftplib import FTP
+import ConfigParser
+import socket
+import os
 
 #Check for trigger files and if found, set up trigger.
-def processTriggers(downloadedFiles):
+def processTriggers(downloadedFiles, logging):
+	
+    if(len(downloadedFiles) == 0):
+		logging.info("No files downloaded, so no script triggers checked.")
+        return '',logging
+	
 	#load config
     config = ConfigParser.ConfigParser()
     config.read("C:\GIS\Corporate\GISAdministration\Security\LIST_ftp_script_details.txt")
     #[listEmail]
     emailAddressLIST = [i[1] for i in config.items("listEmail")]
+    SITE = config.get("ftpdetails","SITE")
+    UN = config.get("ftpdetails","UN")
+    PW = config.get("ftpdetails","PW")
     #Lists of triggers for FME scripts.
     fmeTrigger = 0 #FME Script Triggers
     twTrigger = 0 #SW script trigger
-
+	
+    #email message text.
+    messageText = ''
+	
     fmeTriggerList = ['Private_leases.zip',    'leases.zip',    'licences.zip',    'pluc.zip',    'lga_reserves.zip',    'transport.zip']
     TasWaterTriggerList = ['ReuseLines.zip', 'ReusePts.zip', 'SewerLines.zip', 'SewerPts.zip', 'WaterLines.zip', 'WaterPts.zip']
-
+    
     #Required: Buildings, Heritage, Contours 2m, Public Toilets, AssetAreas, Kerbs, Zoning, Notations, Ordinance, stormwaterpipes, stormwaterpits
     monthlyFilesList = [\
         "C:\GIS\Projects\External\Scheduled\LIST_ftp\Upload\Buildings",\
@@ -34,7 +47,6 @@ def processTriggers(downloadedFiles):
         "LandUseAndAdministration\Planning\Notations",\
         "TopographicInformation\Infrastructure\Stormwater\Stormwaterpipes",\
         "TopographicInformation\Infrastructure\Stormwater\Stormwaterpits"]
-    print 'TRIGGER PROCESSOR RAN'
     for j in downloadedFiles:
         #monthly script
         for k in fmeTriggerList:
@@ -54,37 +66,50 @@ def processTriggers(downloadedFiles):
         
         rootDir = "C:\GIS\Corporate"
         sentItems = []
+		
+        #connect to FTP
+        connected = 0
+        try:
+			logging.info('Connecting to FTP site for Upload')
+			ftp = FTP(SITE)
+			ftp.login(UN,PW)
+			connected = 1
+        except (EOFError, socket.error):
+			logging.error("FTP Connection Failed")
+			connected = 0
         
-        for uploadItem in monthlyFilesList:
-            #Set up files for monthly upload...
-            
-            destFile = uploadItem.split('\\')[-1] + ".zip"
-            sentItems.append(destFile)
-            if (not "C:\\" in uploadItem):
-                source = os.path.join(rootDir, uploadItem) + ".*"
-            else:
-                source = uploadItem + ".*"
-                
-            destination = os.path.join("C:\GIS\Projects\External\Scheduled\LIST_ftp\Upload", destFile)
-            os.system(r'"C:\Program Files\7-Zip\7z.exe" a %s %s -tzip' %(destination, source))
-        
-            fp = open(destination,'rb') # file to send
-            ftp.storbinary('STOR dpiwe_upload/Stormwaterpipes.zip', fp)
-        
-        logging.info("GCC Data uploaded to The LIST. Notifying them of datasets uploaded.")
-        
-        #email The LIST
-        subjectTextLIST = "GCC Data Supply"    
-        messageTextLIST = "Hi there \n\nWe supplied:\n"
-        for i in sentItems:
-            messageTextLIST = messageTextLIST + "* " + i + "\n"
-        messageTextLIST = messageTextLIST + "\nRegards,\n\nGCC GIS\ngis@gcc.tas.gov.au"
-        
-        sendEmail(emailAddress, emailAddressLIST, subjectTextLIST, messageTextLIST, "0")
-        logging.info("Email sent to The LIST")
+        if(connected):
+			for uploadItem in monthlyFilesList:
+				#Set up files for monthly upload...
+				
+				destFile = uploadItem.split('\\')[-1] + ".zip"
+				sentItems.append(destFile)
+				if (not "C:\\" in uploadItem):
+					source = os.path.join(rootDir, uploadItem) + ".*"
+				else:
+					source = uploadItem + ".*"
+					
+				destination = os.path.join("C:\GIS\Projects\External\Scheduled\LIST_ftp\Upload", destFile)
+				os.system(r'"C:\Program Files\7-Zip\7z.exe" a %s %s -tzip' %(destination, source))
+			
+				fp = open(destination,'rb') # file to send
+				ftp.storbinary('STOR dpiwe_upload/Stormwaterpipes.zip', fp)
+			
+			logging.info("GCC Data uploaded to The LIST. Notifying them of datasets uploaded.")
+			
+			#email The LIST
+			subjectTextLIST = "GCC Data Supply"    
+			messageTextLIST = "Hi there \n\nWe supplied:\n"
+			for i in sentItems:
+				messageTextLIST = messageTextLIST + "* " + i + "\n"
+			messageTextLIST = messageTextLIST + "\nRegards,\n\nGCC GIS\ngis@gcc.tas.gov.au"
+			
+			sendEmail(emailAddress, emailAddressLIST, subjectTextLIST, messageTextLIST, "0")
+			logging.info("Email sent to The LIST")
+        else:
+			logging.warning("Monthly data upload FAILED!")
+			messageText = messageText + "\n\nWarning: Monthly data upload FAILED!\n"
 
-        ftp.quit()
-    else:
         ftp.quit()
 
     if(twTrigger):
@@ -92,11 +117,10 @@ def processTriggers(downloadedFiles):
         os.system("C:\Scripts\FME\southernWater.cmd")
         logging.info("SW Script has been run.")
 
-    messageText = ''
     if(fmeTrigger):
         messageText = messageText + "\n\nNOTE: FME script was run, data were uploaded to The LIST.\nCheck for other data to upload this month, update the Data Dictionary and notify The List.\n"
 
     if(twTrigger):
         messageText = messageText + "\n\nNOTE: Southern Water (WaterSewer) script was run. Update the Data Dictionary and check Exponare.\n"
 
-    return messageText
+    return messageText, logging

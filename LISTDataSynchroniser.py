@@ -210,8 +210,9 @@ if (connected):
     logging.info("%i file matches found, not downloading." %countMatches)
    
     #process triggers, optional step
+    triggerText = ''
     if(processTriggersScript):
-        triggerText = ExtendedMethods.processTriggers(downloadedFiles)
+        triggerText, logging = ExtendedMethods.processTriggers(downloadedFiles, logging)
     
     #Determine which files are no longer on the server.
     for i in localFileList:
@@ -234,7 +235,7 @@ else:
 
 ##email details##
 for i in downloadedFiles:
-    triggerText = messageText + "\n- %s" %i
+    messageText = messageText + "\n- %s" %i
 
 messageText += triggerText
 
