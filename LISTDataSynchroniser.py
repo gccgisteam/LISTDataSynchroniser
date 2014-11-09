@@ -9,7 +9,7 @@
 
 ##Import statements (could be pared down a bit)
 import os.path, time
-from ftplib import FTP
+import ftplib
 import socket #used to catch ftp error
 import ConfigParser
 from optparse import OptionParser #parse command line arguments
@@ -71,11 +71,12 @@ localFileSize = []
 connected = 0
 try:
     globals.logging.info('Connecting to FTP site')
-    ftp = FTP(globals.SITE)
+    ftp = ftplib.FTP(globals.SITE)
     ftp.login(globals.UN,globals.PW)
     connected = 1
-except (EOFError, socket.error):
-    globals.logging.error("FTP Connection Failed")
+except (EOFError, socket.error, ftplib.error_perm):
+    print 'Error: FTP Connection failed.'
+    globals.logging.error("FTP Connection Failed...")
     connected = 0
 
 if (connected):
@@ -148,7 +149,7 @@ if (connected):
 else:
     #Script Failed to Connect to FTP
     subjectText = "NOTICE! FTP Script Failed to Connect"
-    messageText = "Download Failed, check FTP connection manually and rerun."
+    messageText = "Download Failed, check FTP connection manually and rerun. If it still fails contact The LIST at Geodata.ClientServices@dpipwe.tas.gov.au"
 
 ##email details##
 for i in globals.downloadedFiles:
