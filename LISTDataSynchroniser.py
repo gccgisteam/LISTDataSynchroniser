@@ -149,7 +149,7 @@ if (connected):
 else:
     #Script Failed to Connect to FTP
     subjectText = "NOTICE! FTP Script Failed to Connect"
-    messageText = "Download Failed, check FTP connection manually and rerun. If it still fails contact The LIST at Geodata.ClientServices@dpipwe.tas.gov.au"
+    messageText = "Download Failed, check FTP connection manually and rerun."
 
 ##email details##
 for i in globals.downloadedFiles:
