@@ -57,8 +57,12 @@ def processTriggers(downloadedFiles):
         #unzip list
         for o in unzipList:
             if(o == j):
-                fullLocalFile = os.path.join(globals.localPath, j)    
-                unzip(fullLocalFile, globals.localPath)
+                fullLocalFile = os.path.join(globals.localPath, j)
+                unzipTo = fullLocalFile[0:-4]
+                if not os.path.exists(unzipTo):
+                    # Create the directory
+                    os.makedirs(unzipTo)
+                unzip(fullLocalFile, unzipTo)
 
     if(fmeTrigger):
         globals.logging.info("Downloaded an FME trigger layer, triggering the FME script.")
